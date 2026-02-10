@@ -112,6 +112,10 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   
   console.log('Extracted project financing data:', JSON.stringify(projectFinancingData, null, 2));
 
+  if (!supabase) {
+    throw new Error('Supabase client not initialized. Please check environment variables.');
+  }
+
   const supabaseInsertStart = Date.now();
   console.log('Attempting to save to Supabase...');
   console.log(`⏱️  Supabase insert started at: ${new Date().toISOString()}`);
@@ -132,9 +136,6 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
     throw new Error(`Error saving project financing data: ${financingError.message} (Code: ${financingError.code})`);
   }
   
-  const supabaseInsertEnd = Date.now();
-  const supabaseInsertDuration = supabaseInsertEnd - supabaseInsertStart;
-  console.log(`⏱️  Supabase main table insert: ${supabaseInsertDuration}ms`);
   const supabaseInsertEnd = Date.now();
   const supabaseInsertDuration = supabaseInsertEnd - supabaseInsertStart;
   console.log(`⏱️  Supabase main table insert: ${supabaseInsertDuration}ms`);
