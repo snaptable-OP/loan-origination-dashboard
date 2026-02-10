@@ -26,6 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const startTime = Date.now();
     const webhookData = req.body;
     const timestamp = new Date().toISOString();
     
@@ -34,35 +35,59 @@ export default async function handler(req, res) {
     console.log('Timestamp:', timestamp);
     console.log('Method:', req.method);
     console.log('URL:', req.url);
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Body received:', JSON.stringify(webhookData, null, 2));
-    console.log('Body type:', typeof webhookData);
-    console.log('Body keys:', webhookData ? Object.keys(webhookData) : 'null');
+    
+    const receiveTime = Date.now();
+    const timeToReceive = receiveTime - startTime;
+    console.log(`⏱️  Time to receive: ${timeToReceive}ms`);
     
     // Step 1: Send JSON data to Snaptable data transformer API
+    const snaptableStartTime = Date.now();
     let transformedData;
+    let snaptableDuration = 0;
     try {
       transformedData = await transformDataWithSnaptable(webhookData);
+      const snaptableEndTime = Date.now();
+      snaptableDuration = snaptableEndTime - snaptableStartTime;
+      console.log(`⏱️  Snaptable transformation: ${snaptableDuration}ms`);
       console.log('Data transformed by Snaptable:', transformedData);
     } catch (snaptableError) {
+      const snaptableEndTime = Date.now();
+      snaptableDuration = snaptableEndTime - snaptableStartTime;
+      console.error(`⏱️  Snaptable failed after: ${snaptableDuration}ms`);
       console.error('Snaptable transformation failed, proceeding with original data:', snaptableError);
     }
     
     const dataToProcess = transformedData || webhookData;
     
+    // Step 2: Save to Supabase
+    const supabaseStartTime = Date.now();
     console.log('Processing data to save to Supabase...');
-    console.log('Data to process:', JSON.stringify(dataToProcess, null, 2));
     
     const financingData = await processProjectFinancingData(dataToProcess);
     
+    const supabaseEndTime = Date.now();
+    const supabaseDuration = supabaseEndTime - supabaseStartTime;
+    console.log(`⏱️  Supabase save: ${supabaseDuration}ms`);
     console.log('✅ Successfully saved to Supabase:', financingData.id);
+    
+    const totalTime = Date.now() - startTime;
+    console.log(`⏱️  TOTAL PROCESSING TIME: ${totalTime}ms`);
+    console.log(`   - Receive: ${timeToReceive}ms`);
+    console.log(`   - Snaptable: ${snaptableDuration}ms`);
+    console.log(`   - Supabase: ${supabaseDuration}ms`);
     
     return res.status(200).json({
       success: true,
       message: 'Project financing data received, transformed, and saved successfully',
       timestamp: new Date().toISOString(),
       project_financing_data: financingData,
-      snaptable_transformed: !!transformedData
+      snaptable_transformed: !!transformedData,
+      performance: {
+        total_time_ms: totalTime,
+        receive_time_ms: timeToReceive,
+        snaptable_time_ms: snaptableDuration,
+        supabase_time_ms: supabaseDuration
+      }
     });
   } catch (error) {
     console.error('❌ ERROR processing project financing webhook:', error);

@@ -35,8 +35,10 @@ export function mapWebhookDataToApplication(webhookData) {
 export async function transformDataWithSnaptable(jsonData) {
   try {
     const textInput = JSON.stringify(jsonData, null, 2);
+    const snaptableRequestStart = Date.now();
     
     console.log('Sending data to Snaptable API...');
+    console.log(`⏱️  Snaptable request started at: ${new Date().toISOString()}`);
     
     const response = await fetch(SNAPTABLE_API_URL, {
       method: 'POST',
@@ -110,7 +112,9 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   
   console.log('Extracted project financing data:', JSON.stringify(projectFinancingData, null, 2));
 
+  const supabaseInsertStart = Date.now();
   console.log('Attempting to save to Supabase...');
+  console.log(`⏱️  Supabase insert started at: ${new Date().toISOString()}`);
   console.log('Data being saved:', JSON.stringify(projectFinancingData, null, 2));
   
   const { data: financingData, error: financingError } = await supabase
@@ -128,9 +132,16 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
     throw new Error(`Error saving project financing data: ${financingError.message} (Code: ${financingError.code})`);
   }
   
+  const supabaseInsertEnd = Date.now();
+  const supabaseInsertDuration = supabaseInsertEnd - supabaseInsertStart;
+  console.log(`⏱️  Supabase main table insert: ${supabaseInsertDuration}ms`);
+  const supabaseInsertEnd = Date.now();
+  const supabaseInsertDuration = supabaseInsertEnd - supabaseInsertStart;
+  console.log(`⏱️  Supabase main table insert: ${supabaseInsertDuration}ms`);
   console.log('✅ Successfully inserted into project_financing_data:', financingData.id);
 
   const projectFinancingId = financingData.id;
+  const relatedDataStart = Date.now();
 
   // Process drawdown schedules
   // Handle both original format and Snaptable transformed format
@@ -197,5 +208,12 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
     }
   }
 
+  const relatedDataEnd = Date.now();
+  const relatedDataDuration = relatedDataEnd - relatedDataStart;
+  console.log(`⏱️  Supabase related tables (drawdowns, permits, terms): ${relatedDataDuration}ms`);
+  
+  const totalSupabaseTime = Date.now() - supabaseInsertStart;
+  console.log(`⏱️  Total Supabase operation time: ${totalSupabaseTime}ms`);
+  
   return financingData;
 }
