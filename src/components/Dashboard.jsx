@@ -84,10 +84,12 @@ export default function Dashboard() {
         return sum + (loanAmount || 0)
       }, 0)
 
+      // Total Collateral Value based on as-if-complete valuation
       const totalCollateralValue = uniqueProjects.reduce((sum, p) => {
-        return sum + (p.as_is_valuation_of_project || 0)
+        return sum + (p.as_if_complete_valuation_of_project || 0)
       }, 0)
 
+      // LTV = Total Loan Amount / Total As-If-Complete Value
       const totalLTV = totalCollateralValue > 0
         ? (totalLoanAmount / totalCollateralValue) * 100
         : 0
@@ -164,7 +166,7 @@ export default function Dashboard() {
             <TrendingUp className="w-5 h-5 text-gray-400" />
           </div>
           <p className="text-3xl font-bold text-gray-900">{formatCurrency(metrics.totalCollateralValue)}</p>
-          <p className="text-xs text-gray-500 mt-1">Sum of as-is valuations</p>
+          <p className="text-xs text-gray-500 mt-1">Sum of as-if-complete valuations</p>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
