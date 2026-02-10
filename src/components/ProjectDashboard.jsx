@@ -100,6 +100,19 @@ export default function ProjectDashboard({ projectId }) {
       setDrawdowns(drawdownsRes.data || [])
       setPermits(permitsRes.data || [])
       setRisks(risksRes.data || [])
+      
+      // Debug: Log the loan_amount value to help troubleshoot
+      console.log('📊 Project data loaded:', {
+        id: projectData.id,
+        project_name: projectData.project_name,
+        loan_amount: projectData.loan_amount,
+        loan_amount_type: typeof projectData.loan_amount,
+        as_is_valuation: projectData.as_is_valuation_of_project,
+        loan_to_value_ratio: projectData.loan_to_value_ratio,
+        calculated_amount: projectData.as_is_valuation_of_project && projectData.loan_to_value_ratio 
+          ? projectData.as_is_valuation_of_project * projectData.loan_to_value_ratio 
+          : null
+      })
     } catch (error) {
       console.error('Error loading project data:', error)
     } finally {
