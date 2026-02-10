@@ -1,13 +1,8 @@
 // Process uploaded document with multimodal LLM support for tables/images
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
-import fs from 'fs'
-import path from 'path'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-import sharp from 'sharp'
-
-const execAsync = promisify(exec)
+// Note: PDF to image conversion happens client-side
+// This endpoint receives pre-converted images
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const openaiApiKey = process.env.OPENAI_API_KEY
