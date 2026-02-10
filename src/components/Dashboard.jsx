@@ -1,150 +1,270 @@
-import { DollarSign, FileText, Clock, CheckCircle, TrendingUp, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { 
+  Building2,
+  DollarSign,
+  TrendingUp,
+  Percent,
+  ArrowRight
+} from 'lucide-react'
 
-const Dashboard = () => {
-  const stats = [
-    {
-      title: 'Total Loan Volume',
-      value: '$12.5M',
-      change: '+12.5%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Active Applications',
-      value: '142',
-      change: '+8',
-      trend: 'up',
-      icon: FileText,
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Pending Review',
-      value: '23',
-      change: '-3',
-      trend: 'down',
-      icon: Clock,
-      color: 'bg-yellow-500',
-    },
-    {
-      title: 'Approved This Month',
-      value: '89',
-      change: '+15%',
-      trend: 'up',
-      icon: CheckCircle,
-      color: 'bg-purple-500',
-    },
-  ]
+export default function Dashboard() {
+  const [projects, setProjects] = useState([])
+  const [metrics, setMetrics] = useState({
+    totalProjects: 0,
+    totalLoanAmount: 0,
+    totalCollateralValue: 0,
+    totalLTV: 0
+  })
+  const [loading, setLoading] = useState(true)
 
-  const recentApplications = [
-    {
-      id: 'LO-2024-001',
-      applicant: 'Sarah Johnson',
-      amount: '$250,000',
-      type: 'Mortgage',
-      status: 'Under Review',
-      date: '2024-01-15',
-      statusColor: 'bg-yellow-100 text-yellow-800',
-    },
-    {
-      id: 'LO-2024-002',
-      applicant: 'Michael Chen',
-      amount: '$75,000',
-      type: 'Personal',
-      status: 'Approved',
-      date: '2024-01-14',
-      statusColor: 'bg-green-100 text-green-800',
-    },
-    {
-      id: 'LO-2024-003',
-      applicant: 'Emily Rodriguez',
-      amount: '$500,000',
-      type: 'Business',
-      status: 'Pending',
-      date: '2024-01-13',
-      statusColor: 'bg-blue-100 text-blue-800',
-    },
-    {
-      id: 'LO-2024-004',
-      applicant: 'David Kim',
-      amount: '$150,000',
-      type: 'Mortgage',
-      status: 'Rejected',
-      date: '2024-01-12',
-      statusColor: 'bg-red-100 text-red-800',
-    },
-  ]
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+
+      if (!supabase) {
+        console.error('Supabase client not initialized')
+        setLoading(false)
+        return
+      }
+
+      // Fetch all project financing data, ordered by most recent
+      const { data: allProjects, error } = await supabase
+        .from('project_financing_data')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error loading projects:', error)
+        setLoading(false)
+        return
+      }
+
+      // Group by project_name and get the latest for each
+      const projectsByName = new Map()
+      
+      allProjects.forEach(project => {
+        const name = project.project_name || 'Unnamed Project'
+        const existing = projectsByName.get(name)
+        
+        if (!existing) {
+          projectsByName.set(name, project)
+        } else {
+          const existingTime = new Date(existing.updated_at || existing.created_at).getTime()
+          const currentTime = new Date(project.updated_at || project.created_at).getTime()
+          
+          if (currentTime > existingTime) {
+            projectsByName.set(name, project)
+          }
+        }
+      })
+
+      const uniqueProjects = Array.from(projectsByName.values())
+        .sort((a, b) => {
+          const timeA = new Date(a.updated_at || a.created_at).getTime()
+          const timeB = new Date(b.updated_at || b.created_at).getTime()
+          return timeB - timeA
+        })
+
+      setProjects(uniqueProjects)
+
+      // Calculate metrics
+      const totalProjects = uniqueProjects.length
+      
+      const totalLoanAmount = uniqueProjects.reduce((sum, p) => {
+        const loanAmount = (p.loan_amount != null && p.loan_amount !== undefined)
+          ? p.loan_amount
+          : (p.as_is_valuation_of_project && p.loan_to_value_ratio
+            ? p.as_is_valuation_of_project * p.loan_to_value_ratio
+            : 0)
+        return sum + (loanAmount || 0)
+      }, 0)
+
+      const totalCollateralValue = uniqueProjects.reduce((sum, p) => {
+        return sum + (p.as_is_valuation_of_project || 0)
+      }, 0)
+
+      const totalLTV = totalCollateralValue > 0
+        ? (totalLoanAmount / totalCollateralValue) * 100
+        : 0
+
+      setMetrics({
+        totalProjects,
+        totalLoanAmount,
+        totalCollateralValue,
+        totalLTV
+      })
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (value) => {
+    if (!value) return '$0'
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value)
+  }
+
+  const getLoanAmount = (project) => {
+    return (project.loan_amount != null && project.loan_amount !== undefined)
+      ? project.loan_amount
+      : (project.as_is_valuation_of_project && project.loan_to_value_ratio
+        ? project.as_is_valuation_of_project * project.loan_to_value_ratio
+        : 0)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-gray-600 mt-1">Welcome back! Here's your loan origination overview.</p>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-1">Overview of all projects</p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    {stat.trend === 'up' ? (
-                      <TrendingUp size={16} className="text-green-500" />
-                    ) : (
-                      <AlertCircle size={16} className="text-red-500" />
-                    )}
-                    <span className={`text-sm font-medium ${stat.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                      {stat.change}
-                    </span>
-                    <span className="text-sm text-gray-500">vs last month</span>
-                  </div>
-                </div>
-                <div className={`${stat.color} p-3 rounded-lg`}>
-                  <Icon size={24} className="text-white" />
-                </div>
-              </div>
-            </div>
-          )
-        })}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">Number of Projects</span>
+            <Building2 className="w-5 h-5 text-gray-400" />
+          </div>
+          <p className="text-3xl font-bold text-gray-900">{metrics.totalProjects}</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">Total Loan Amounts</span>
+            <DollarSign className="w-5 h-5 text-gray-400" />
+          </div>
+          <p className="text-3xl font-bold text-gray-900">{formatCurrency(metrics.totalLoanAmount)}</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">Total Collateral Value</span>
+            <TrendingUp className="w-5 h-5 text-gray-400" />
+          </div>
+          <p className="text-3xl font-bold text-gray-900">{formatCurrency(metrics.totalCollateralValue)}</p>
+          <p className="text-xs text-gray-500 mt-1">Sum of as-is valuations</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-600">Total Loan to Value (LTV)</span>
+            <Percent className="w-5 h-5 text-gray-400" />
+          </div>
+          <p className="text-3xl font-bold text-gray-900">{metrics.totalLTV.toFixed(1)}%</p>
+          <p className="text-xs text-gray-500 mt-1">Total loan / Total collateral</p>
+        </div>
       </div>
 
-      {/* Recent Applications */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Applications</h3>
+      {/* Projects List */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">All Projects</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Project Name
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Loan Amount
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  As-Is Valuation
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  LTV
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  LTC
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Updated
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {recentApplications.map((app) => (
-                <tr key={app.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{app.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{app.applicant}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{app.amount}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.type}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${app.statusColor}`}>
-                      {app.status}
-                    </span>
+              {projects.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    No projects found
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.date}</td>
                 </tr>
-              ))}
+              ) : (
+                projects.map((project) => {
+                  const loanAmount = getLoanAmount(project)
+                  const ltv = project.as_is_valuation_of_project && project.as_is_valuation_of_project > 0
+                    ? (loanAmount / project.as_is_valuation_of_project) * 100
+                    : null
+
+                  return (
+                    <tr key={project.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Building2 className="w-5 h-5 text-gray-400 mr-2" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {project.project_name || 'Unnamed Project'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(loanAmount)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <span className="text-sm text-gray-900">
+                          {formatCurrency(project.as_is_valuation_of_project)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        {ltv !== null ? (
+                          <span className="text-sm font-medium text-gray-900">
+                            {ltv.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">N/A</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        {project.loan_to_cost_ratio ? (
+                          <span className="text-sm font-medium text-gray-900">
+                            {(project.loan_to_cost_ratio * 100).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">N/A</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(project.updated_at || project.created_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -152,5 +272,3 @@ const Dashboard = () => {
     </div>
   )
 }
-
-export default Dashboard
