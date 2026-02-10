@@ -102,6 +102,9 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
     contingency_sum_percentage_of_project_cost: webhookData.contingency_sum?.percentage_of_project_cost ? parseFloat(webhookData.contingency_sum.percentage_of_project_cost) : null,
   };
 
+  console.log('Attempting to save to Supabase...');
+  console.log('Data being saved:', JSON.stringify(projectFinancingData, null, 2));
+  
   const { data: financingData, error: financingError } = await supabase
     .from('project_financing_data')
     .insert([projectFinancingData])
@@ -109,8 +112,15 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
     .single();
 
   if (financingError) {
-    throw new Error(`Error saving project financing data: ${financingError.message}`);
+    console.error('❌ Supabase insert error:', financingError);
+    console.error('Error code:', financingError.code);
+    console.error('Error message:', financingError.message);
+    console.error('Error details:', financingError.details);
+    console.error('Error hint:', financingError.hint);
+    throw new Error(`Error saving project financing data: ${financingError.message} (Code: ${financingError.code})`);
   }
+  
+  console.log('✅ Successfully inserted into project_financing_data:', financingData.id);
 
   const projectFinancingId = financingData.id;
 

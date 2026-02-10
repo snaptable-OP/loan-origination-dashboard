@@ -39,7 +39,13 @@ export default async function handler(req, res) {
     }
     
     const dataToProcess = transformedData || webhookData;
+    
+    console.log('Processing data to save to Supabase...');
+    console.log('Data to process:', JSON.stringify(dataToProcess, null, 2));
+    
     const financingData = await processProjectFinancingData(dataToProcess);
+    
+    console.log('✅ Successfully saved to Supabase:', financingData.id);
     
     return res.status(200).json({
       success: true,
@@ -49,11 +55,19 @@ export default async function handler(req, res) {
       snaptable_transformed: !!transformedData
     });
   } catch (error) {
-    console.error('Error processing project financing webhook:', error);
+    console.error('❌ ERROR processing project financing webhook:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      cause: error.cause
+    });
+    
     return res.status(500).json({
       success: false,
       message: 'Error processing project financing webhook',
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
