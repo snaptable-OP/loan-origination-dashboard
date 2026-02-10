@@ -1,7 +1,17 @@
 // Dedicated endpoint for project financing data
 import { transformDataWithSnaptable, processProjectFinancingData } from '../shared.js';
 
+// Wrap in try-catch to handle import errors
 export default async function handler(req, res) {
+  // Early error handling for missing environment variables
+  if (!process.env.SUPABASE_URL || (!process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_ANON_KEY)) {
+    console.error('❌ Missing Supabase environment variables');
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error: Missing Supabase credentials',
+      message: 'Please check Vercel environment variables'
+    });
+  }
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
