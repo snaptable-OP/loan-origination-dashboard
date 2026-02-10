@@ -37,10 +37,10 @@ export default function ProjectDashboard({ projectId }) {
         return
       }
 
-      // Load main project data
-      const { data: projectData, error: projectError } = await supabase
+      // First, get the project to find its project_name
+      const { data: selectedProject, error: projectError } = await supabase
         .from('project_financing_data')
-        .select('*')
+        .select('id, project_name')
         .eq('id', projectId)
         .single()
 
@@ -50,21 +50,50 @@ export default function ProjectDashboard({ projectId }) {
         return
       }
 
-      // Load related data
+      const projectName = selectedProject.project_name || 'Unnamed Project'
+
+      // Load the LATEST project data for this project name
+      // This ensures we always show the most recent data even if there are duplicates
+      const { data: projectDataArray, error: latestError } = await supabase
+        .from('project_financing_data')
+        .select('*')
+        .eq('project_name', projectName)
+        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
+        .limit(1)
+
+      if (latestError) {
+        console.error('Error loading latest project data:', latestError)
+        setLoading(false)
+        return
+      }
+
+      if (!projectDataArray || projectDataArray.length === 0) {
+        console.error('No project data found')
+        setLoading(false)
+        return
+      }
+
+      const projectData = projectDataArray[0]
+
+      // Use the latest project's ID for related data
+      const latestProjectId = projectData.id
+
+      // Load related data using the latest project ID
       const [drawdownsRes, permitsRes, risksRes] = await Promise.all([
         supabase
           .from('drawdown_schedules')
           .select('*')
-          .eq('project_financing_data_id', projectId)
+          .eq('project_financing_data_id', latestProjectId)
           .order('sequence_number', { ascending: true }),
         supabase
           .from('permits_and_approvals')
           .select('*')
-          .eq('project_financing_data_id', projectId),
+          .eq('project_financing_data_id', latestProjectId),
         supabase
           .from('contractual_terms_and_risks')
           .select('*')
-          .eq('project_financing_data_id', projectId)
+          .eq('project_financing_data_id', latestProjectId)
       ])
 
       setProject(projectData)

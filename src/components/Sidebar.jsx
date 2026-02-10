@@ -20,9 +20,10 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
         return
       }
       
+      // Get all projects ordered by created_at (newest first)
       const { data, error } = await supabase
         .from('project_financing_data')
-        .select('id, project_name, created_at')
+        .select('id, project_name, created_at, updated_at')
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -31,21 +32,45 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
         return
       }
 
-      // Group by project_name (in case there are duplicates)
-      const uniqueProjects = []
-      const seenNames = new Set()
+      // Group by project_name and keep only the latest one (by created_at, then updated_at)
+      const projectsByName = new Map()
       
       data.forEach(project => {
         const name = project.project_name || 'Unnamed Project'
-        if (!seenNames.has(name)) {
-          seenNames.add(name)
-          uniqueProjects.push({
+        const existing = projectsByName.get(name)
+        
+        if (!existing) {
+          // First occurrence of this project name
+          projectsByName.set(name, {
             id: project.id,
             name: name,
-            created_at: project.created_at
+            created_at: project.created_at,
+            updated_at: project.updated_at
           })
+        } else {
+          // Compare timestamps to keep the latest
+          const existingTime = new Date(existing.updated_at || existing.created_at).getTime()
+          const currentTime = new Date(project.updated_at || project.created_at).getTime()
+          
+          if (currentTime > existingTime) {
+            // This one is newer, replace it
+            projectsByName.set(name, {
+              id: project.id,
+              name: name,
+              created_at: project.created_at,
+              updated_at: project.updated_at
+            })
+          }
         }
       })
+
+      // Convert map to array and sort by most recent
+      const uniqueProjects = Array.from(projectsByName.values())
+        .sort((a, b) => {
+          const timeA = new Date(a.updated_at || a.created_at).getTime()
+          const timeB = new Date(b.updated_at || b.created_at).getTime()
+          return timeB - timeA // Newest first
+        })
 
       setProjects(uniqueProjects)
       
