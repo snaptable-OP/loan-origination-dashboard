@@ -5,9 +5,13 @@ import Dashboard from './components/Dashboard'
 import LoanApplications from './components/LoanApplications'
 import NewApplication from './components/NewApplication'
 import Analytics from './components/Analytics'
+import ProjectFinancingDashboard from './components/ProjectFinancingDashboard'
+import ProjectFinancingList from './components/ProjectFinancingList'
+import ProjectFinancingDetail from './components/ProjectFinancingDetail'
 
 function App() {
-  const [activeView, setActiveView] = useState('dashboard')
+  const [activeView, setActiveView] = useState('project-financing-dashboard')
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null)
 
   const renderContent = () => {
     switch (activeView) {
@@ -19,8 +23,26 @@ function App() {
         return <NewApplication />
       case 'analytics':
         return <Analytics />
+      case 'project-financing-dashboard':
+        return <ProjectFinancingDashboard />
+      case 'project-financing-list':
+        return (
+          <ProjectFinancingList 
+            onViewDetail={(id) => {
+              setSelectedApplicationId(id)
+              setActiveView('project-financing-detail')
+            }}
+          />
+        )
+      case 'project-financing-detail':
+        return (
+          <ProjectFinancingDetail 
+            applicationId={selectedApplicationId}
+            onBack={() => setActiveView('project-financing-list')}
+          />
+        )
       default:
-        return <Dashboard />
+        return <ProjectFinancingDashboard />
     }
   }
 
