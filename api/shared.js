@@ -91,16 +91,24 @@ export async function transformDataWithSnaptable(jsonData) {
 
 // Helper function to process project financing data
 export async function processProjectFinancingData(webhookData, loanApplicationId = null) {
+  // Log the data structure to see what we're receiving
+  console.log('Processing project financing data. Data structure:', JSON.stringify(webhookData, null, 2));
+  console.log('Data keys:', webhookData ? Object.keys(webhookData) : 'null');
+  
+  // Try to extract values with multiple possible field name variations
+  // (handles both original format and Snaptable transformed format)
   const projectFinancingData = {
     loan_application_id: loanApplicationId,
-    loan_to_value_ratio: webhookData.loan_to_value_ratio ? parseFloat(webhookData.loan_to_value_ratio) : null,
-    loan_to_cost_ratio: webhookData.loan_to_cost_ratio ? parseFloat(webhookData.loan_to_cost_ratio) : null,
-    as_is_valuation_of_project: webhookData.as_is_valuation_of_project ? parseFloat(webhookData.as_is_valuation_of_project) : null,
-    as_if_complete_valuation_of_project: webhookData.as_if_complete_valuation_of_project ? parseFloat(webhookData.as_if_complete_valuation_of_project) : null,
-    expected_presales: webhookData.expected_presales ? parseFloat(webhookData.expected_presales) : null,
-    contingency_sum: webhookData.contingency_sum?.contingency_sum ? parseFloat(webhookData.contingency_sum.contingency_sum) : null,
-    contingency_sum_percentage_of_project_cost: webhookData.contingency_sum?.percentage_of_project_cost ? parseFloat(webhookData.contingency_sum.percentage_of_project_cost) : null,
+    loan_to_value_ratio: webhookData.loan_to_value_ratio || webhookData.loanToValueRatio || webhookData['loan-to-value-ratio'] ? parseFloat(webhookData.loan_to_value_ratio || webhookData.loanToValueRatio || webhookData['loan-to-value-ratio']) : null,
+    loan_to_cost_ratio: webhookData.loan_to_cost_ratio || webhookData.loanToCostRatio || webhookData['loan-to-cost-ratio'] ? parseFloat(webhookData.loan_to_cost_ratio || webhookData.loanToCostRatio || webhookData['loan-to-cost-ratio']) : null,
+    as_is_valuation_of_project: webhookData.as_is_valuation_of_project || webhookData.asIsValuationOfProject || webhookData['as-is-valuation-of-project'] ? parseFloat(webhookData.as_is_valuation_of_project || webhookData.asIsValuationOfProject || webhookData['as-is-valuation-of-project']) : null,
+    as_if_complete_valuation_of_project: webhookData.as_if_complete_valuation_of_project || webhookData.asIfCompleteValuationOfProject || webhookData['as-if-complete-valuation-of-project'] ? parseFloat(webhookData.as_if_complete_valuation_of_project || webhookData.asIfCompleteValuationOfProject || webhookData['as-if-complete-valuation-of-project']) : null,
+    expected_presales: webhookData.expected_presales || webhookData.expectedPresales ? parseFloat(webhookData.expected_presales || webhookData.expectedPresales) : null,
+    contingency_sum: (webhookData.contingency_sum?.contingency_sum || webhookData.contingencySum?.contingencySum || webhookData.contingency_sum || webhookData.contingencySum) ? parseFloat(webhookData.contingency_sum?.contingency_sum || webhookData.contingencySum?.contingencySum || webhookData.contingency_sum || webhookData.contingencySum) : null,
+    contingency_sum_percentage_of_project_cost: (webhookData.contingency_sum?.percentage_of_project_cost || webhookData.contingencySum?.percentageOfProjectCost || webhookData.contingency_sum_percentage_of_project_cost) ? parseFloat(webhookData.contingency_sum?.percentage_of_project_cost || webhookData.contingencySum?.percentageOfProjectCost || webhookData.contingency_sum_percentage_of_project_cost) : null,
   };
+  
+  console.log('Extracted project financing data:', JSON.stringify(projectFinancingData, null, 2));
 
   console.log('Attempting to save to Supabase...');
   console.log('Data being saved:', JSON.stringify(projectFinancingData, null, 2));
@@ -125,11 +133,14 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   const projectFinancingId = financingData.id;
 
   // Process drawdown schedules
-  if (webhookData.drawdown_schedule && Array.isArray(webhookData.drawdown_schedule)) {
-    const drawdowns = webhookData.drawdown_schedule.map((item, index) => ({
+  // Handle both original format and Snaptable transformed format
+  const drawdownSchedule = webhookData.drawdown_schedule || webhookData.drawdownSchedule || webhookData['drawdown-schedule'] || [];
+  if (drawdownSchedule && Array.isArray(drawdownSchedule)) {
+    console.log('Processing drawdown schedule with', drawdownSchedule.length, 'items');
+    const drawdowns = drawdownSchedule.map((item, index) => ({
       project_financing_data_id: projectFinancingId,
-      construction_milestone: item.construction_milestone || null,
-      drawdown_sum_for_milestone: item.drawdown_sum_for_milestone ? parseFloat(item.drawdown_sum_for_milestone) : null,
+      construction_milestone: item.construction_milestone || item.constructionMilestone || item['construction-milestone'] || null,
+      drawdown_sum_for_milestone: (item.drawdown_sum_for_milestone || item.drawdownSumForMilestone || item['drawdown-sum-for-milestone']) ? parseFloat(item.drawdown_sum_for_milestone || item.drawdownSumForMilestone || item['drawdown-sum-for-milestone']) : null,
       sequence_number: index + 1,
     }));
 
@@ -145,11 +156,13 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   }
 
   // Process permits and approvals
-  if (webhookData.existing_permits_and_approvals && Array.isArray(webhookData.existing_permits_and_approvals)) {
-    const permits = webhookData.existing_permits_and_approvals.map(item => ({
+  const permitsAndApprovals = webhookData.existing_permits_and_approvals || webhookData.existingPermitsAndApprovals || webhookData['existing-permits-and-approvals'] || [];
+  if (permitsAndApprovals && Array.isArray(permitsAndApprovals)) {
+    console.log('Processing permits and approvals with', permitsAndApprovals.length, 'items');
+    const permits = permitsAndApprovals.map(item => ({
       project_financing_data_id: projectFinancingId,
-      document_id: item.document_id || null,
-      permit_or_approval_document_name: item.permit_or_approval_document_name || null,
+      document_id: item.document_id || item.documentId || item['document-id'] || null,
+      permit_or_approval_document_name: item.permit_or_approval_document_name || item.permitOrApprovalDocumentName || item['permit-or-approval-document-name'] || null,
     }));
 
     if (permits.length > 0) {
@@ -164,11 +177,13 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   }
 
   // Process contractual terms and risks
-  if (webhookData.contractual_term_and_risk_assessment && Array.isArray(webhookData.contractual_term_and_risk_assessment)) {
-    const terms = webhookData.contractual_term_and_risk_assessment.map(item => ({
+  const contractualTerms = webhookData.contractual_term_and_risk_assessment || webhookData.contractualTermAndRiskAssessment || webhookData['contractual-term-and-risk-assessment'] || [];
+  if (contractualTerms && Array.isArray(contractualTerms)) {
+    console.log('Processing contractual terms with', contractualTerms.length, 'items');
+    const terms = contractualTerms.map(item => ({
       project_financing_data_id: projectFinancingId,
-      risk_assessment: item.risk_assessment || null,
-      contractual_clause: item.contractual_clause || null,
+      risk_assessment: item.risk_assessment || item.riskAssessment || item['risk-assessment'] || null,
+      contractual_clause: item.contractual_clause || item.contractualClause || item['contractual-clause'] || null,
     }));
 
     if (terms.length > 0) {
