@@ -152,7 +152,9 @@ export default function ProjectFinancingDetail({ applicationId, onBack }) {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Application Details</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {application.project_name || 'Unnamed Project'}
+            </h1>
             <p className="text-sm text-gray-500 mt-1">ID: {application.id}</p>
           </div>
         </div>
@@ -265,6 +267,12 @@ export default function ProjectFinancingDetail({ applicationId, onBack }) {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Details</h3>
           <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600">Project Name</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">
+                {application.project_name || 'Unnamed Project'}
+              </p>
+            </div>
             <div>
               <p className="text-sm text-gray-600">Expected Presales</p>
               <p className="text-xl font-bold text-gray-900 mt-1">

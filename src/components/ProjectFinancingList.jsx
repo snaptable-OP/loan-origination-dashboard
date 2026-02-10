@@ -88,7 +88,10 @@ export default function ProjectFinancingList({ onViewDetail }) {
   }
 
   const filteredApplications = applications.filter(app => {
-    const matchesSearch = app.id.toLowerCase().includes(searchTerm.toLowerCase())
+    const searchLower = searchTerm.toLowerCase()
+    const matchesSearch = 
+      app.id.toLowerCase().includes(searchLower) ||
+      (app.project_name && app.project_name.toLowerCase().includes(searchLower))
     const matchesRisk = riskFilter === 'all' || 
       (riskFilter === 'high' && app.riskScore >= 7) ||
       (riskFilter === 'medium' && app.riskScore >= 4 && app.riskScore < 7) ||
@@ -119,7 +122,7 @@ export default function ProjectFinancingList({ onViewDetail }) {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by application ID..."
+              placeholder="Search by project name or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -177,7 +180,7 @@ export default function ProjectFinancingList({ onViewDetail }) {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Application ID
+                  Project Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Loan-to-Value
@@ -214,7 +217,10 @@ export default function ProjectFinancingList({ onViewDetail }) {
                   <tr key={app.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {app.id.substring(0, 8)}...
+                        {app.project_name || 'Unnamed Project'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ID: {app.id.substring(0, 8)}...
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

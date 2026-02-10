@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS project_financing_data (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   loan_application_id UUID,
   
+  -- Project information
+  project_name TEXT,
+  
   -- Loan ratios
   loan_to_value_ratio DECIMAL(10, 4),
   loan_to_cost_ratio DECIMAL(10, 4),
@@ -69,6 +72,7 @@ CREATE TABLE IF NOT EXISTS contractual_terms_and_risks (
 -- Create indexes on project_financing_data
 CREATE INDEX IF NOT EXISTS idx_project_financing_loan_application_id ON project_financing_data(loan_application_id);
 CREATE INDEX IF NOT EXISTS idx_project_financing_created_at ON project_financing_data(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_project_financing_project_name ON project_financing_data(project_name);
 
 -- Create indexes on drawdown_schedules
 CREATE INDEX IF NOT EXISTS idx_drawdown_schedules_project_id ON drawdown_schedules(project_financing_data_id);

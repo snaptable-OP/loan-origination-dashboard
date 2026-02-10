@@ -302,7 +302,7 @@ export default function ProjectFinancingDashboard() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Application ID
+                  Project Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   LTV Ratio
@@ -328,6 +328,9 @@ export default function ProjectFinancingDashboard() {
                   <tr key={app.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
+                        {app.project_name || 'Unnamed Project'}
+                      </div>
+                      <div className="text-xs text-gray-500">
                         {app.id.substring(0, 8)}...
                       </div>
                     </td>
