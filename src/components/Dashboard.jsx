@@ -218,8 +218,9 @@ export default function Dashboard() {
               ) : (
                 projects.map((project) => {
                   const loanAmount = getLoanAmount(project)
-                  const ltv = project.as_is_valuation_of_project && project.as_is_valuation_of_project > 0
-                    ? (loanAmount / project.as_is_valuation_of_project) * 100
+                  // LTV calculated using as-if-complete valuation
+                  const ltv = project.as_if_complete_valuation_of_project && project.as_if_complete_valuation_of_project > 0
+                    ? (loanAmount / project.as_if_complete_valuation_of_project) * 100
                     : null
 
                   return (
