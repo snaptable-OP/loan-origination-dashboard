@@ -11,9 +11,6 @@ function App() {
   const [activeView, setActiveView] = useState('dashboard')
   const [selectedProjectId, setSelectedProjectId] = useState(null)
 
-  // Error boundary - catch any rendering errors
-  try {
-
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
