@@ -11,6 +11,7 @@ import {
   Trash2,
   Search
 } from 'lucide-react'
+import DocumentUploader from './DocumentUploader'
 
 export default function DocumentReview({ projectId }) {
   const [step, setStep] = useState('checklist') // checklist, documents, review, working-paper
@@ -350,25 +351,27 @@ export default function DocumentReview({ projectId }) {
       {step === 'documents' && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold mb-4">Upload Documents</h2>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <input
-              type="file"
-              accept=".pdf,.docx"
-              onChange={(e) => {
-                const file = e.target.files[0]
-                if (file) handleFileUpload(file)
-              }}
-              className="hidden"
-              id="file-upload"
-            />
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg inline-block"
-            >
-              Choose File
-            </label>
-          </div>
+          {(() => {
+            // Get review project ID
+            const reviewProjectId = documents.length > 0 
+              ? documents[0].review_project_id 
+              : null
+            
+            if (!reviewProjectId && projectId) {
+              // Need to create review project first
+              return <div>Loading...</div>
+            }
+            
+            return (
+              <DocumentUploader
+                reviewProjectId={reviewProjectId}
+                onUploadComplete={(document, processResult) => {
+                  loadDocuments()
+                  alert(`Document processed! ${processResult.chunks_created} chunks created using ${processResult.processing_method} method.`)
+                }}
+              />
+            )
+          })()}
           <div className="mt-6">
             <h3 className="font-semibold mb-2">Uploaded Documents ({documents.length})</h3>
             <div className="space-y-2">

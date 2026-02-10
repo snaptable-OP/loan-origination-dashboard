@@ -151,17 +151,17 @@ export default async function handler(req, res) {
       `[Document: ${c.file_name}, Page ${c.page_number}]\n${c.chunk_text}`
     ).join('\n\n')
 
-    // Generate answer
+    // Generate answer - use GPT-4 for better table/data understanding
     const answerResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4', // GPT-4 is better at understanding structured data and tables
       messages: [
         {
           role: 'system',
-          content: 'You are a document review assistant. Answer questions based on the provided document excerpts. Always cite the document name and page number in your answer.'
+          content: 'You are a document review assistant. Answer questions based on the provided document excerpts. The excerpts may contain tables, structured data, or images that were converted to text. Always cite the document name and page number in your answer. When referencing tables or numerical data, be precise and include the exact values.'
         },
         {
           role: 'user',
-          content: `Question: ${question}\n\nContext:\n${context}\n\nAnswer the question based on the context above. Include document name and page number references.`
+          content: `Question: ${question}\n\nContext:\n${context}\n\nAnswer the question based on the context above. If the context contains tables or structured data, extract and reference the specific values. Always include document name and page number references.`
         }
       ],
       temperature: 0.3
