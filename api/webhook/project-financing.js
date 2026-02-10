@@ -17,9 +17,17 @@ export default async function handler(req, res) {
 
   try {
     const webhookData = req.body;
+    const timestamp = new Date().toISOString();
     
-    console.log('Project financing webhook received at:', new Date().toISOString());
-    console.log('Received data:', JSON.stringify(webhookData, null, 2));
+    // Enhanced logging for Vercel
+    console.log('=== WEBHOOK RECEIVED ===');
+    console.log('Timestamp:', timestamp);
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Body received:', JSON.stringify(webhookData, null, 2));
+    console.log('Body type:', typeof webhookData);
+    console.log('Body keys:', webhookData ? Object.keys(webhookData) : 'null');
     
     // Step 1: Send JSON data to Snaptable data transformer API
     let transformedData;
