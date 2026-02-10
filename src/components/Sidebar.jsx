@@ -1,16 +1,60 @@
-import { LayoutDashboard, FileText, PlusCircle, BarChart3, Settings, Building2, List, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { LayoutDashboard, FileText, PlusCircle, BarChart3, Settings, Building2 } from 'lucide-react'
 
-const Sidebar = ({ activeView, setActiveView }) => {
+const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProjectId }) => {
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('project_financing_data')
+        .select('id, project_name, created_at')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Group by project_name (in case there are duplicates)
+      const uniqueProjects = []
+      const seenNames = new Set()
+      
+      data.forEach(project => {
+        const name = project.project_name || 'Unnamed Project'
+        if (!seenNames.has(name)) {
+          seenNames.add(name)
+          uniqueProjects.push({
+            id: project.id,
+            name: name,
+            created_at: project.created_at
+          })
+        }
+      })
+
+      setProjects(uniqueProjects)
+      
+      // Auto-select first project if none selected
+      if (!selectedProjectId && uniqueProjects.length > 0) {
+        setSelectedProjectId(uniqueProjects[0].id)
+        setActiveView('project-dashboard')
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'applications', label: 'Applications', icon: FileText },
     { id: 'new-application', label: 'New Application', icon: PlusCircle },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  ]
-
-  const projectFinancingItems = [
-    { id: 'project-financing-dashboard', label: 'Risk Dashboard', icon: Shield },
-    { id: 'project-financing-list', label: 'All Applications', icon: List },
   ]
 
   return (
@@ -75,10 +119,13 @@ const Sidebar = ({ activeView, setActiveView }) => {
         </div>
       </nav>
       <div className="p-4 border-t border-gray-200">
-        <div className="bg-blue-50 rounded-lg p-4">
-          <p className="text-sm font-medium text-blue-900">Need Help?</p>
-          <p className="text-xs text-blue-700 mt-1">Contact support for assistance</p>
-        </div>
+        <button
+          onClick={loadProjects}
+          className="w-full bg-blue-50 rounded-lg p-4 text-left hover:bg-blue-100 transition-colors"
+        >
+          <p className="text-sm font-medium text-blue-900">Refresh Projects</p>
+          <p className="text-xs text-blue-700 mt-1">Reload project list</p>
+        </button>
       </div>
     </div>
   )

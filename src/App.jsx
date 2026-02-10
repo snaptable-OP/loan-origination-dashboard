@@ -5,13 +5,11 @@ import Dashboard from './components/Dashboard'
 import LoanApplications from './components/LoanApplications'
 import NewApplication from './components/NewApplication'
 import Analytics from './components/Analytics'
-import ProjectFinancingDashboard from './components/ProjectFinancingDashboard'
-import ProjectFinancingList from './components/ProjectFinancingList'
-import ProjectFinancingDetail from './components/ProjectFinancingDetail'
+import ProjectDashboard from './components/ProjectDashboard'
 
 function App() {
-  const [activeView, setActiveView] = useState('project-financing-dashboard')
-  const [selectedApplicationId, setSelectedApplicationId] = useState(null)
+  const [activeView, setActiveView] = useState('dashboard')
+  const [selectedProjectId, setSelectedProjectId] = useState(null)
 
   const renderContent = () => {
     switch (activeView) {
@@ -23,32 +21,21 @@ function App() {
         return <NewApplication />
       case 'analytics':
         return <Analytics />
-      case 'project-financing-dashboard':
-        return <ProjectFinancingDashboard />
-      case 'project-financing-list':
-        return (
-          <ProjectFinancingList 
-            onViewDetail={(id) => {
-              setSelectedApplicationId(id)
-              setActiveView('project-financing-detail')
-            }}
-          />
-        )
-      case 'project-financing-detail':
-        return (
-          <ProjectFinancingDetail 
-            applicationId={selectedApplicationId}
-            onBack={() => setActiveView('project-financing-list')}
-          />
-        )
+      case 'project-dashboard':
+        return <ProjectDashboard projectId={selectedProjectId} />
       default:
-        return <ProjectFinancingDashboard />
+        return <Dashboard />
     }
   }
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar activeView={activeView} setActiveView={setActiveView} />
+      <Sidebar 
+        activeView={activeView} 
+        setActiveView={setActiveView}
+        selectedProjectId={selectedProjectId}
+        setSelectedProjectId={setSelectedProjectId}
+      />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-6">
