@@ -91,9 +91,6 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'applications', label: 'Applications', icon: FileText },
-    { id: 'new-application', label: 'New Application', icon: PlusCircle },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ]
 
   return (
