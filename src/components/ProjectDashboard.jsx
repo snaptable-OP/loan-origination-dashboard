@@ -170,9 +170,11 @@ export default function ProjectDashboard({ projectId }) {
 
   const riskScore = calculateRiskScore(project)
   const riskLevel = getRiskLevel(riskScore)
-  // Use loan_amount directly if available, otherwise calculate from LTV
-  const loanAmount = project.loan_amount || 
-    (project.as_is_valuation_of_project && project.loan_to_value_ratio
+  // Use loan_amount directly if available (check for null/undefined, not just falsy)
+  // Otherwise calculate from LTV
+  const loanAmount = (project.loan_amount != null && project.loan_amount !== undefined) 
+    ? project.loan_amount
+    : (project.as_is_valuation_of_project && project.loan_to_value_ratio
       ? project.as_is_valuation_of_project * project.loan_to_value_ratio
       : 0)
 
