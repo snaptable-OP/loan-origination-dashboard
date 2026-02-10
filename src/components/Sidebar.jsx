@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { LayoutDashboard, FileText, PlusCircle, BarChart3, Settings, Building2 } from 'lucide-react'
+import { LayoutDashboard, Building2 } from 'lucide-react'
 
 const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProjectId }) => {
   const [projects, setProjects] = useState([])
