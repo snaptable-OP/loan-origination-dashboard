@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS project_financing_data (
   -- Project information
   project_name TEXT,
   
+  -- Loan amount (direct from Snaptable)
+  loan_amount DECIMAL(15, 2),
+  
   -- Loan ratios
   loan_to_value_ratio DECIMAL(10, 4),
   loan_to_cost_ratio DECIMAL(10, 4),

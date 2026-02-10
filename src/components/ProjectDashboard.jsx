@@ -141,9 +141,11 @@ export default function ProjectDashboard({ projectId }) {
 
   const riskScore = calculateRiskScore(project)
   const riskLevel = getRiskLevel(riskScore)
-  const loanAmount = project.as_is_valuation_of_project && project.loan_to_value_ratio
-    ? project.as_is_valuation_of_project * project.loan_to_value_ratio
-    : 0
+  // Use loan_amount directly if available, otherwise calculate from LTV
+  const loanAmount = project.loan_amount || 
+    (project.as_is_valuation_of_project && project.loan_to_value_ratio
+      ? project.as_is_valuation_of_project * project.loan_to_value_ratio
+      : 0)
 
   return (
     <div className="space-y-6">

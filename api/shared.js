@@ -108,6 +108,7 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   const projectFinancingData = {
     loan_application_id: loanApplicationId,
     project_name: dataToExtract.project_name || dataToExtract.projectName || dataToExtract['project-name'] || null,
+    loan_amount: dataToExtract.loan_amount || dataToExtract.loanAmount || dataToExtract['loan-amount'] ? parseFloat(dataToExtract.loan_amount || dataToExtract.loanAmount || dataToExtract['loan-amount']) : null,
     loan_to_value_ratio: dataToExtract.loan_to_value_ratio || dataToExtract.loanToValueRatio || dataToExtract['loan-to-value-ratio'] ? parseFloat(dataToExtract.loan_to_value_ratio || dataToExtract.loanToValueRatio || dataToExtract['loan-to-value-ratio']) : null,
     loan_to_cost_ratio: dataToExtract.loan_to_cost_ratio || dataToExtract.loanToCostRatio || dataToExtract['loan-to-cost-ratio'] ? parseFloat(dataToExtract.loan_to_cost_ratio || dataToExtract.loanToCostRatio || dataToExtract['loan-to-cost-ratio']) : null,
     as_is_valuation_of_project: dataToExtract.as_is_valuation_of_project || dataToExtract.asIsValuationOfProject || dataToExtract['as-is-valuation-of-project'] ? parseFloat(dataToExtract.as_is_valuation_of_project || dataToExtract.asIsValuationOfProject || dataToExtract['as-is-valuation-of-project']) : null,
