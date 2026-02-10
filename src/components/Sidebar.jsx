@@ -74,13 +74,8 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
 
       setProjects(uniqueProjects)
       
-      // Auto-select first project if none selected
-      if (!selectedProjectId && uniqueProjects.length > 0) {
-        setSelectedProjectId(uniqueProjects[0].id)
-        if (activeView === 'dashboard' || !activeView) {
-          setActiveView('project-dashboard')
-        }
-      }
+      // Don't auto-select project - let user stay on dashboard view
+      // Only auto-select if they explicitly click on a project
     } catch (error) {
       console.error('Error loading projects:', error)
       setProjects([])
