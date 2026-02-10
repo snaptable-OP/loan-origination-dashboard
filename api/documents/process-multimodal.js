@@ -1,21 +1,30 @@
 // Process uploaded document with multimodal LLM support for tables/images
+// Uses Google Gemini Flash-3 for multimodal processing
 import { createClient } from '@supabase/supabase-js'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
+
 // Note: PDF to image conversion happens client-side
 // This endpoint receives pre-converted images
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-const openaiApiKey = process.env.OPENAI_API_KEY
+const geminiApiKey = process.env.GEMINI_API_KEY
+const openaiApiKey = process.env.OPENAI_API_KEY // Still needed for embeddings
 
 if (!supabaseUrl || !supabaseServiceKey) {
   throw new Error('Missing Supabase credentials')
 }
 
+if (!geminiApiKey) {
+  throw new Error('Missing Gemini API key')
+}
+
 if (!openaiApiKey) {
-  throw new Error('Missing OpenAI API key')
+  throw new Error('Missing OpenAI API key for embeddings')
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const genAI = new GoogleGenerativeAI(geminiApiKey)
 const openai = new OpenAI({ apiKey: openaiApiKey })
 
 export default async function handler(req, res) {
@@ -150,24 +159,14 @@ export default async function handler(req, res) {
             const mightHaveTables = pageText.includes('|') || 
                                    pageText.match(/\d+[\s]+\d+[\s]+\d+/g) // Multiple numbers in rows
 
-            // If tables detected, use GPT-4 to better structure the data
+            // If tables detected, use Gemini Flash-3 to better structure the data
             let processedText = pageText
             if (mightHaveTables) {
-              const structureResponse = await openai.chat.completions.create({
-                model: 'gpt-4',
-                messages: [
-                  {
-                    role: 'system',
-                    content: 'Extract and structure all tables and data from this text. Convert tables to markdown format. Preserve all numerical values and labels.'
-                  },
-                  {
-                    role: 'user',
-                    content: pageText
-                  }
-                ],
-                temperature: 0
-              })
-              processedText = structureResponse.choices[0].message.content
+              const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+              const prompt = 'Extract and structure all tables and data from this text. Convert tables to markdown format. Preserve all numerical values and labels. Maintain table relationships and structure.'
+              
+              const result = await model.generateContent(prompt + '\n\n' + pageText)
+              processedText = result.response.text()
             }
 
             const embeddingResponse = await openai.embeddings.create({

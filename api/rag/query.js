@@ -1,16 +1,24 @@
 // RAG query endpoint: search documents and answer checklist questions
+// Uses Gemini Flash-3 for answer generation, OpenAI for embeddings
 import { createClient } from '@supabase/supabase-js'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
 
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const geminiApiKey = process.env.GEMINI_API_KEY
 const openaiApiKey = process.env.OPENAI_API_KEY
 
 if (!supabaseUrl || !supabaseServiceKey || !openaiApiKey) {
   throw new Error('Missing required credentials')
 }
 
+if (!geminiApiKey) {
+  throw new Error('Missing Gemini API key')
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const genAI = new GoogleGenerativeAI(geminiApiKey)
 const openai = new OpenAI({ apiKey: openaiApiKey })
 
 export default async function handler(req, res) {
@@ -152,22 +160,19 @@ export default async function handler(req, res) {
     ).join('\n\n')
 
     // Generate answer - use GPT-4 for better table/data understanding
-    const answerResponse = await openai.chat.completions.create({
-      model: 'gpt-4', // GPT-4 is better at understanding structured data and tables
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a document review assistant. Answer questions based on the provided document excerpts. The excerpts may contain tables, structured data, or images that were converted to text. Always cite the document name and page number in your answer. When referencing tables or numerical data, be precise and include the exact values.'
-        },
-        {
-          role: 'user',
-          content: `Question: ${question}\n\nContext:\n${context}\n\nAnswer the question based on the context above. If the context contains tables or structured data, extract and reference the specific values. Always include document name and page number references.`
-        }
-      ],
-      temperature: 0.3
-    })
+      // Use Gemini Flash-3 for answer generation
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+      const prompt = `You are a document review assistant. Answer questions based on the provided document excerpts. The excerpts may contain tables, structured data, or images that were converted to text. Always cite the document name and page number in your answer. When referencing tables or numerical data, be precise and include the exact values.
 
-    const answer = answerResponse.choices[0].message.content
+Question: ${question}
+
+Context:
+${context}
+
+Answer the question based on the context above. If the context contains tables or structured data, extract and reference the specific values. Always include document name and page number references.`
+
+      const result = await model.generateContent(prompt)
+      const answer = result.response.text()
 
     return res.status(200).json({
       success: true,

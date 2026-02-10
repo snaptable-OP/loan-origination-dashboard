@@ -2,18 +2,18 @@
 
 ## Overview
 
-The document review workflow now supports multimodal LLM processing for PDFs containing tables, images, and complex layouts using GPT-4 Vision.
+The document review workflow now supports multimodal LLM processing for PDFs containing tables, images, and complex layouts using **Google Gemini Flash-3**.
 
 ## How It Works
 
 1. **PDF Upload**: PDF is uploaded to Supabase Storage
 2. **PDF to Images**: PDF pages are converted to images (client-side using pdf.js)
-3. **Vision Processing**: Each page image is sent to GPT-4 Vision to extract:
+3. **Multimodal Processing**: Each page image is sent to **Gemini Flash-3** to extract:
    - Text content
    - Tables (converted to markdown)
    - Structured data
    - Numerical values
-4. **Embedding Creation**: Extracted text is embedded using text-embedding-ada-002
+4. **Embedding Creation**: Extracted text is embedded using OpenAI text-embedding-ada-002
 5. **Vector Storage**: Embeddings stored in Supabase with metadata about tables/images
 
 ## Key Features
@@ -59,26 +59,28 @@ The document review workflow now supports multimodal LLM processing for PDFs con
 ## Dependencies
 
 ```bash
-npm install pdfjs-dist
+npm install @google/generative-ai pdfjs-dist
 ```
 
 ## Environment Variables
 
-Already required:
-- `OPENAI_API_KEY` - For GPT-4 Vision and embeddings
+Required:
+- `GEMINI_API_KEY` - For Gemini Flash-3 multimodal processing
+- `OPENAI_API_KEY` - For text embeddings (text-embedding-ada-002)
 
 ## Usage
 
 1. User uploads PDF
 2. Component converts PDF pages to images
 3. Images sent to `/api/documents/process-multimodal`
-4. GPT-4 Vision extracts text, tables, and data
+4. **Gemini Flash-3** extracts text, tables, and data
 5. Results embedded and stored for RAG queries
 
 ## RAG Query Enhancement
 
 The RAG query endpoint (`/api/rag/query`) now:
-- Uses GPT-4 (better at structured data)
+- Uses **Gemini Flash-3** for answer generation (excellent at structured data and tables)
+- Uses OpenAI embeddings for vector search
 - Understands table context
 - Extracts precise numerical values
 - References document and page numbers
@@ -94,9 +96,11 @@ If client-side PDF conversion is too heavy, consider:
 
 ## Cost Considerations
 
-- GPT-4 Vision: ~$0.01 per page (varies by image size)
+- **Gemini Flash-3**: Much cheaper than GPT-4 Vision (~$0.0001-0.001 per page)
 - Text embeddings: ~$0.0001 per page
 - Consider caching results to reduce costs
+
+**Note**: Gemini Flash-3 is significantly more cost-effective while maintaining excellent performance on tables and structured data.
 
 ## Testing
 

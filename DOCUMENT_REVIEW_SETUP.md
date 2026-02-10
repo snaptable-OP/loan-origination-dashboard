@@ -35,10 +35,13 @@ The schema includes `CREATE EXTENSION IF NOT EXISTS vector;` which should run au
 Add these to your Vercel environment variables:
 
 ```
-OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_google_gemini_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here  # Still needed for embeddings (text-embedding-ada-002)
 ```
 
 (Other variables like SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SNAPTABLE_API_URL, SNAPTABLE_API_TOKEN should already be set)
+
+**Note**: We use Gemini Flash-3 for multimodal processing and answer generation, but OpenAI embeddings for vector search (as Gemini embeddings are not yet available).
 
 ## Install Dependencies
 
