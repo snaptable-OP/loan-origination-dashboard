@@ -97,17 +97,23 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   console.log('Processing project financing data. Data structure:', JSON.stringify(webhookData, null, 2));
   console.log('Data keys:', webhookData ? Object.keys(webhookData) : 'null');
   
+  // Snaptable wraps the transformed data in a "result" object
+  // If we have { success: true, result: { ... } }, use the result object
+  const dataToExtract = webhookData.result || webhookData;
+  console.log('Extracting from:', webhookData.result ? 'result object' : 'top level');
+  console.log('Data to extract keys:', Object.keys(dataToExtract));
+  
   // Try to extract values with multiple possible field name variations
   // (handles both original format and Snaptable transformed format)
   const projectFinancingData = {
     loan_application_id: loanApplicationId,
-    loan_to_value_ratio: webhookData.loan_to_value_ratio || webhookData.loanToValueRatio || webhookData['loan-to-value-ratio'] ? parseFloat(webhookData.loan_to_value_ratio || webhookData.loanToValueRatio || webhookData['loan-to-value-ratio']) : null,
-    loan_to_cost_ratio: webhookData.loan_to_cost_ratio || webhookData.loanToCostRatio || webhookData['loan-to-cost-ratio'] ? parseFloat(webhookData.loan_to_cost_ratio || webhookData.loanToCostRatio || webhookData['loan-to-cost-ratio']) : null,
-    as_is_valuation_of_project: webhookData.as_is_valuation_of_project || webhookData.asIsValuationOfProject || webhookData['as-is-valuation-of-project'] ? parseFloat(webhookData.as_is_valuation_of_project || webhookData.asIsValuationOfProject || webhookData['as-is-valuation-of-project']) : null,
-    as_if_complete_valuation_of_project: webhookData.as_if_complete_valuation_of_project || webhookData.asIfCompleteValuationOfProject || webhookData['as-if-complete-valuation-of-project'] ? parseFloat(webhookData.as_if_complete_valuation_of_project || webhookData.asIfCompleteValuationOfProject || webhookData['as-if-complete-valuation-of-project']) : null,
-    expected_presales: webhookData.expected_presales || webhookData.expectedPresales ? parseFloat(webhookData.expected_presales || webhookData.expectedPresales) : null,
-    contingency_sum: (webhookData.contingency_sum?.contingency_sum || webhookData.contingencySum?.contingencySum || webhookData.contingency_sum || webhookData.contingencySum) ? parseFloat(webhookData.contingency_sum?.contingency_sum || webhookData.contingencySum?.contingencySum || webhookData.contingency_sum || webhookData.contingencySum) : null,
-    contingency_sum_percentage_of_project_cost: (webhookData.contingency_sum?.percentage_of_project_cost || webhookData.contingencySum?.percentageOfProjectCost || webhookData.contingency_sum_percentage_of_project_cost) ? parseFloat(webhookData.contingency_sum?.percentage_of_project_cost || webhookData.contingencySum?.percentageOfProjectCost || webhookData.contingency_sum_percentage_of_project_cost) : null,
+    loan_to_value_ratio: dataToExtract.loan_to_value_ratio || dataToExtract.loanToValueRatio || dataToExtract['loan-to-value-ratio'] ? parseFloat(dataToExtract.loan_to_value_ratio || dataToExtract.loanToValueRatio || dataToExtract['loan-to-value-ratio']) : null,
+    loan_to_cost_ratio: dataToExtract.loan_to_cost_ratio || dataToExtract.loanToCostRatio || dataToExtract['loan-to-cost-ratio'] ? parseFloat(dataToExtract.loan_to_cost_ratio || dataToExtract.loanToCostRatio || dataToExtract['loan-to-cost-ratio']) : null,
+    as_is_valuation_of_project: dataToExtract.as_is_valuation_of_project || dataToExtract.asIsValuationOfProject || dataToExtract['as-is-valuation-of-project'] ? parseFloat(dataToExtract.as_is_valuation_of_project || dataToExtract.asIsValuationOfProject || dataToExtract['as-is-valuation-of-project']) : null,
+    as_if_complete_valuation_of_project: dataToExtract.as_if_complete_valuation_of_project || dataToExtract.asIfCompleteValuationOfProject || dataToExtract['as-if-complete-valuation-of-project'] ? parseFloat(dataToExtract.as_if_complete_valuation_of_project || dataToExtract.asIfCompleteValuationOfProject || dataToExtract['as-if-complete-valuation-of-project']) : null,
+    expected_presales: dataToExtract.expected_presales || dataToExtract.expectedPresales ? parseFloat(dataToExtract.expected_presales || dataToExtract.expectedPresales) : null,
+    contingency_sum: (dataToExtract.contingency_sum?.contingency_sum || dataToExtract.contingencySum?.contingencySum || dataToExtract.contingency_sum || dataToExtract.contingencySum) ? parseFloat(dataToExtract.contingency_sum?.contingency_sum || dataToExtract.contingencySum?.contingencySum || dataToExtract.contingency_sum || dataToExtract.contingencySum) : null,
+    contingency_sum_percentage_of_project_cost: (dataToExtract.contingency_sum?.percentage_of_project_cost || dataToExtract.contingencySum?.percentageOfProjectCost || dataToExtract.contingency_sum_percentage_of_project_cost) ? parseFloat(dataToExtract.contingency_sum?.percentage_of_project_cost || dataToExtract.contingencySum?.percentageOfProjectCost || dataToExtract.contingency_sum_percentage_of_project_cost) : null,
   };
   
   console.log('Extracted project financing data:', JSON.stringify(projectFinancingData, null, 2));
@@ -146,7 +152,7 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
 
   // Process drawdown schedules
   // Handle both original format and Snaptable transformed format
-  const drawdownSchedule = webhookData.drawdown_schedule || webhookData.drawdownSchedule || webhookData['drawdown-schedule'] || [];
+  const drawdownSchedule = dataToExtract.drawdown_schedule || dataToExtract.drawdownSchedule || dataToExtract['drawdown-schedule'] || [];
   if (drawdownSchedule && Array.isArray(drawdownSchedule)) {
     console.log('Processing drawdown schedule with', drawdownSchedule.length, 'items');
     const drawdowns = drawdownSchedule.map((item, index) => ({
@@ -168,7 +174,7 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   }
 
   // Process permits and approvals
-  const permitsAndApprovals = webhookData.existing_permits_and_approvals || webhookData.existingPermitsAndApprovals || webhookData['existing-permits-and-approvals'] || [];
+  const permitsAndApprovals = dataToExtract.existing_permits_and_approvals || dataToExtract.existingPermitsAndApprovals || dataToExtract['existing-permits-and-approvals'] || [];
   if (permitsAndApprovals && Array.isArray(permitsAndApprovals)) {
     console.log('Processing permits and approvals with', permitsAndApprovals.length, 'items');
     const permits = permitsAndApprovals.map(item => ({
@@ -189,7 +195,7 @@ export async function processProjectFinancingData(webhookData, loanApplicationId
   }
 
   // Process contractual terms and risks
-  const contractualTerms = webhookData.contractual_term_and_risk_assessment || webhookData.contractualTermAndRiskAssessment || webhookData['contractual-term-and-risk-assessment'] || [];
+  const contractualTerms = dataToExtract.contractual_term_and_risk_assessment || dataToExtract.contractualTermAndRiskAssessment || dataToExtract['contractual-term-and-risk-assessment'] || [];
   if (contractualTerms && Array.isArray(contractualTerms)) {
     console.log('Processing contractual terms with', contractualTerms.length, 'items');
     const terms = contractualTerms.map(item => ({
