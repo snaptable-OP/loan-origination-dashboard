@@ -31,6 +31,12 @@ export default function ProjectDashboard({ projectId }) {
     try {
       setLoading(true)
 
+      if (!supabase) {
+        console.error('Supabase client not initialized')
+        setLoading(false)
+        return
+      }
+
       // Load main project data
       const { data: projectData, error: projectError } = await supabase
         .from('project_financing_data')
@@ -38,7 +44,11 @@ export default function ProjectDashboard({ projectId }) {
         .eq('id', projectId)
         .single()
 
-      if (projectError) throw projectError
+      if (projectError) {
+        console.error('Error loading project:', projectError)
+        setLoading(false)
+        return
+      }
 
       // Load related data
       const [drawdownsRes, permitsRes, risksRes] = await Promise.all([

@@ -13,12 +13,23 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
   const loadProjects = async () => {
     try {
       setLoading(true)
+      
+      if (!supabase) {
+        console.error('Supabase client not initialized')
+        setLoading(false)
+        return
+      }
+      
       const { data, error } = await supabase
         .from('project_financing_data')
         .select('id, project_name, created_at')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error loading projects:', error)
+        setLoading(false)
+        return
+      }
 
       // Group by project_name (in case there are duplicates)
       const uniqueProjects = []
@@ -41,10 +52,13 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
       // Auto-select first project if none selected
       if (!selectedProjectId && uniqueProjects.length > 0) {
         setSelectedProjectId(uniqueProjects[0].id)
-        setActiveView('project-dashboard')
+        if (activeView === 'dashboard' || !activeView) {
+          setActiveView('project-dashboard')
+        }
       }
     } catch (error) {
       console.error('Error loading projects:', error)
+      setProjects([])
     } finally {
       setLoading(false)
     }
