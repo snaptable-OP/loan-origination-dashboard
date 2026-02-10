@@ -52,8 +52,35 @@ export async function transformDataWithSnaptable(jsonData) {
       throw new Error(`Snaptable API error: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
+    // Handle both JSON and text responses from Snaptable
+    const contentType = response.headers.get('content-type');
+    let result;
+    
+    if (contentType && contentType.includes('application/json')) {
+      // Snaptable returns JSON directly
+      result = await response.json();
+    } else {
+      // Snaptable returns text (try to parse as JSON)
+      const textResponse = await response.text();
+      try {
+        result = JSON.parse(textResponse);
+      } catch (parseError) {
+        // If it's not valid JSON, return as-is (might be structured text)
+        console.warn('Snaptable returned non-JSON text, using as-is');
+        result = textResponse;
+      }
+    }
+    
     console.log('Snaptable API response received:', result);
+    
+    // Ensure result is an object (not string) for processing
+    if (typeof result === 'string') {
+      try {
+        result = JSON.parse(result);
+      } catch (e) {
+        throw new Error('Snaptable returned text that could not be parsed as JSON');
+      }
+    }
     
     return result;
   } catch (error) {
