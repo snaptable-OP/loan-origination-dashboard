@@ -70,52 +70,29 @@ export default async function handler(req, res) {
     const chunks = []
 
     if (use_multimodal && document.file_type === 'application/pdf') {
-      // Multimodal processing: Convert PDF pages to images and use GPT-4 Vision
-      const tempDir = `/tmp/pdf_${document_id}`
-      await execAsync(`mkdir -p ${tempDir}`)
+      // Multimodal processing: Convert PDF pages to images and use Gemini Flash-3
+      const { images, text_content } = req.body
 
-      try {
-        // Convert PDF to images using pdf-poppler or similar
-        // For Vercel/serverless, you might need to use a different approach
-        // Option 1: Use pdf-poppler (requires system dependencies)
-        // Option 2: Use a service like Adobe PDF Services
-        // Option 3: Convert client-side and send images
-
-        // For now, we'll use a hybrid approach:
-        // If images are provided, use them; otherwise fall back to text extraction
+      if (images && Array.isArray(images)) {
+        // Process each page image with Gemini Flash-3
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
         
-        const { images, text_content } = req.body
+        for (let i = 0; i < images.length; i++) {
+          const imageBase64 = images[i]
+          const pageNumber = i + 1
 
-        if (images && Array.isArray(images)) {
-          // Process each page image with GPT-4 Vision
-          for (let i = 0; i < images.length; i++) {
-            const imageBase64 = images[i]
-            const pageNumber = i + 1
+          // Use Gemini Flash-3 to extract text and understand tables/images
+          const imagePart = {
+            inlineData: {
+              data: imageBase64,
+              mimeType: 'image/png'
+            }
+          }
 
-            // Use GPT-4 Vision to extract text and understand tables/images
-            const visionResponse = await openai.chat.completions.create({
-              model: 'gpt-4-vision-preview',
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: 'Extract all text, tables, and structured data from this document page. Format tables as markdown. Include all numerical data, labels, and context. Be thorough and accurate.'
-                    },
-                    {
-                      type: 'image_url',
-                      image_url: {
-                        url: `data:image/png;base64,${imageBase64}`
-                      }
-                    }
-                  ]
-                }
-              ],
-              max_tokens: 4096
-            })
+          const prompt = 'Extract all text, tables, and structured data from this document page. Format tables as markdown. Include all numerical data, labels, and context. Be thorough and accurate. Preserve all table structures and relationships between data points.'
 
-            const extractedText = visionResponse.choices[0].message.content
+          const result = await model.generateContent([prompt, imagePart])
+          const extractedText = result.response.text()
 
             // Create embedding from extracted text
             const embeddingResponse = await openai.embeddings.create({
@@ -135,7 +112,7 @@ export default async function handler(req, res) {
                 page_number: pageNumber,
                 embedding: embedding,
                 metadata: {
-                  processing_method: 'multimodal_vision',
+                  processing_method: 'gemini_flash_multimodal',
                   has_tables: extractedText.includes('|') || extractedText.includes('Table'),
                   has_images: true
                 }

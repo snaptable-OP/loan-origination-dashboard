@@ -84,27 +84,17 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'No relevant chunks found' })
       }
 
-      // Use OpenAI to find most relevant chunks
+      // Use Gemini to find most relevant chunks
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
       const chunksWithScores = await Promise.all(
         allChunks.map(async (chunk) => {
-          // Simple relevance scoring (you could improve this)
-          const response = await openai.chat.completions.create({
-            model: 'gpt-4',
-            messages: [
-              {
-                role: 'system',
-                content: 'Rate the relevance of this document chunk to the question from 0-1. Return only a number.'
-              },
-              {
-                role: 'user',
-                content: `Question: ${question}\n\nChunk: ${chunk.chunk_text.substring(0, 500)}`
-              }
-            ],
-            temperature: 0
-          })
+          // Simple relevance scoring using Gemini
+          const prompt = `Rate the relevance of this document chunk to the question from 0-1. Return only a number.\n\nQuestion: ${question}\n\nChunk: ${chunk.chunk_text.substring(0, 500)}`
+          const result = await model.generateContent(prompt)
+          const scoreText = result.response.text().trim()
           return {
             ...chunk,
-            relevance_score: parseFloat(response.choices[0].message.content) || 0
+            relevance_score: parseFloat(scoreText) || 0
           }
         })
       )
@@ -112,27 +102,23 @@ export default async function handler(req, res) {
       chunksWithScores.sort((a, b) => b.relevance_score - a.relevance_score)
       const topChunks = chunksWithScores.slice(0, top_k)
 
-      // Generate answer using RAG
+      // Generate answer using RAG with Gemini Flash-3
       const context = topChunks.map(c => 
         `[Document: ${c.documents.file_name}, Page ${c.page_number}]\n${c.chunk_text}`
       ).join('\n\n')
 
-      const answerResponse = await openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a document review assistant. Answer questions based on the provided document excerpts. Always cite the document name and page number in your answer.'
-          },
-          {
-            role: 'user',
-            content: `Question: ${question}\n\nContext:\n${context}\n\nAnswer the question based on the context above. Include document name and page number references.`
-          }
-        ],
-        temperature: 0.3
-      })
+      const answerModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+      const answerPrompt = `You are a document review assistant. Answer questions based on the provided document excerpts. The excerpts may contain tables, structured data, or images that were converted to text. Always cite the document name and page number in your answer. When referencing tables or numerical data, be precise and include the exact values.
 
-      const answer = answerResponse.choices[0].message.content
+Question: ${question}
+
+Context:
+${context}
+
+Answer the question based on the context above. If the context contains tables or structured data, extract and reference the specific values. Always include document name and page number references.`
+
+      const answerResult = await answerModel.generateContent(answerPrompt)
+      const answer = answerResult.response.text()
 
       return res.status(200).json({
         success: true,
@@ -159,10 +145,9 @@ export default async function handler(req, res) {
       `[Document: ${c.file_name}, Page ${c.page_number}]\n${c.chunk_text}`
     ).join('\n\n')
 
-    // Generate answer - use GPT-4 for better table/data understanding
-      // Use Gemini Flash-3 for answer generation
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
-      const prompt = `You are a document review assistant. Answer questions based on the provided document excerpts. The excerpts may contain tables, structured data, or images that were converted to text. Always cite the document name and page number in your answer. When referencing tables or numerical data, be precise and include the exact values.
+    // Generate answer using Gemini Flash-3 for better table/data understanding
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' })
+    const prompt = `You are a document review assistant. Answer questions based on the provided document excerpts. The excerpts may contain tables, structured data, or images that were converted to text. Always cite the document name and page number in your answer. When referencing tables or numerical data, be precise and include the exact values.
 
 Question: ${question}
 
@@ -171,8 +156,8 @@ ${context}
 
 Answer the question based on the context above. If the context contains tables or structured data, extract and reference the specific values. Always include document name and page number references.`
 
-      const result = await model.generateContent(prompt)
-      const answer = result.response.text()
+    const result = await model.generateContent(prompt)
+    const answer = result.response.text()
 
     return res.status(200).json({
       success: true,
