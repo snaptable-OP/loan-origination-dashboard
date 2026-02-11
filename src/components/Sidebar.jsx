@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { LayoutDashboard, Building2 } from 'lucide-react'
+import { LayoutDashboard, Building2, FileText, Upload } from 'lucide-react'
 
 const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProjectId }) => {
   const [projects, setProjects] = useState([])
@@ -86,6 +86,7 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'checklist-manager', label: 'Checklists', icon: FileText },
   ]
 
   return (

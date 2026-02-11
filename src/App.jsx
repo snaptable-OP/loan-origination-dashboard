@@ -6,6 +6,8 @@ import LoanApplications from './components/LoanApplications'
 import NewApplication from './components/NewApplication'
 import Analytics from './components/Analytics'
 import ProjectDashboard from './components/ProjectDashboard'
+import ChecklistManager from './components/ChecklistManager'
+import DocumentUpload from './components/DocumentUpload'
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard')
@@ -23,6 +25,10 @@ function App() {
         return <Analytics />
       case 'project-dashboard':
         return <ProjectDashboard projectId={selectedProjectId} />
+      case 'checklist-manager':
+        return <ChecklistManager />
+      case 'document-upload':
+        return <DocumentUpload projectId={selectedProjectId} />
       default:
         return <Dashboard />
     }

@@ -14,7 +14,9 @@ export default function Dashboard() {
     totalProjects: 0,
     totalLoanAmount: 0,
     totalCollateralValue: 0,
-    totalLTV: 0
+    totalLTV: 0,
+    belowValuationPercent: 0,
+    aboveValuationPercent: 0
   })
   const [loading, setLoading] = useState(true)
 
@@ -94,11 +96,29 @@ export default function Dashboard() {
         ? (totalLoanAmount / totalCollateralValue) * 100
         : 0
 
+      // Calculate valuation gap metrics
+      const projectsWithGaps = uniqueProjects.map(p => {
+        const marketPrice = p.market_comparable_price || (p.as_is_valuation_of_project * (0.95 + Math.random() * 0.1)) // Mock market price
+        const gap = marketPrice - (p.as_is_valuation_of_project || 0)
+        const gapPercent = p.as_is_valuation_of_project && p.as_is_valuation_of_project > 0
+          ? (gap / p.as_is_valuation_of_project) * 100
+          : 0
+        return { ...p, marketPrice, gap, gapPercent }
+      })
+
+      const belowValuation = projectsWithGaps.filter(p => p.gap < 0).length
+      const aboveValuation = projectsWithGaps.filter(p => p.gap > 0).length
+      const belowValuationPercent = totalProjects > 0 ? (belowValuation / totalProjects) * 100 : 0
+      const aboveValuationPercent = totalProjects > 0 ? (aboveValuation / totalProjects) * 100 : 0
+
       setMetrics({
         totalProjects,
         totalLoanAmount,
         totalCollateralValue,
-        totalLTV
+        totalLTV,
+        belowValuationPercent,
+        aboveValuationPercent,
+        projectsWithGaps
       })
 
     } catch (error) {
@@ -203,6 +223,9 @@ export default function Dashboard() {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   LTC
                 </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Valuation Gap
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Last Updated
                 </th>
@@ -211,7 +234,7 @@ export default function Dashboard() {
             <tbody className="bg-white divide-y divide-gray-200">
               {projects.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     No projects found
                   </td>
                 </tr>

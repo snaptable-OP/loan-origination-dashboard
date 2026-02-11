@@ -278,8 +278,40 @@ export default function ProjectDashboard({ projectId }) {
         </div>
       </div>
 
-      {/* Property Valuations */}
+      {/* Property Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Development Details</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600">Total Units</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">
+                {project.total_units || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Bedrooms per Unit</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">
+                {project.bedrooms_per_unit || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Area per Unit</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">
+                {project.area_per_unit_sqm ? `${project.area_per_unit_sqm} sqm` : 'N/A'}
+              </p>
+            </div>
+            {project.total_units && project.area_per_unit_sqm && (
+              <div>
+                <p className="text-sm text-gray-600">Total Development Area</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">
+                  {(project.total_units * project.area_per_unit_sqm).toLocaleString()} sqm
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Valuations</h3>
           <div className="space-y-4">

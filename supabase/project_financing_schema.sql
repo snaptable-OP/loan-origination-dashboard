@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS project_financing_data (
   -- Expected presales amount
   expected_presales DECIMAL(15, 2),
   
+  -- Development details
+  total_units INTEGER,
+  bedrooms_per_unit INTEGER,
+  area_per_unit_sqm DECIMAL(10, 2),
+  
+  -- Market comparison
+  market_comparable_price DECIMAL(15, 2), -- Market price from data sources
+  
   -- Contingency sum fields (broken down from JSONB object)
   contingency_sum DECIMAL(15, 2),
   contingency_sum_percentage_of_project_cost DECIMAL(5, 2),
