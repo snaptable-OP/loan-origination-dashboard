@@ -136,7 +136,7 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
               {projects.map((project) => {
                 const isActive = selectedProjectId === project.id && activeView === 'project-dashboard'
                 return (
-                  <li key={project.id}>
+                  <li key={project.id} className="space-y-1">
                     <button
                       onClick={() => {
                         setSelectedProjectId(project.id)
@@ -151,6 +151,18 @@ const Sidebar = ({ activeView, setActiveView, selectedProjectId, setSelectedProj
                       <Building2 size={20} />
                       <span className="flex-1 truncate">{project.name}</span>
                     </button>
+                    {isActive && (
+                      <button
+                        onClick={() => {
+                          setSelectedProjectId(project.id)
+                          setActiveView('document-upload')
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 ml-4 rounded-lg text-left text-sm text-gray-600 hover:bg-gray-50"
+                      >
+                        <Upload size={16} />
+                        <span>Upload Documents</span>
+                      </button>
+                    )}
                   </li>
                 )
               })}

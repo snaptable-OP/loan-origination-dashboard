@@ -195,7 +195,7 @@ export default function ProjectDashboard({ projectId }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
             {project.project_name || 'Unnamed Project'}
@@ -204,15 +204,49 @@ export default function ProjectDashboard({ projectId }) {
             Project Dashboard • Created {new Date(project.created_at).toLocaleDateString()}
           </p>
         </div>
-        <div className={`px-4 py-2 rounded-lg border-2 ${riskLevel.borderColor} ${riskLevel.bgColor}`}>
-          <div className="flex items-center gap-2">
-            <Shield className={`w-5 h-5 ${riskLevel.textColor}`} />
-            <span className={`font-bold ${riskLevel.textColor}`}>
-              Risk Score: {riskScore.toFixed(1)} / 10
-            </span>
-            <span className={`font-medium ${riskLevel.textColor}`}>
-              ({riskLevel.label})
-            </span>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className={`px-4 py-2 rounded-lg border-2 ${riskLevel.borderColor} ${riskLevel.bgColor}`}>
+            <div className="flex items-center gap-2">
+              <Shield className={`w-5 h-5 ${riskLevel.textColor}`} />
+              <span className={`font-bold ${riskLevel.textColor}`}>
+                Risk Score: {riskScore.toFixed(1)} / 10
+              </span>
+              <span className={`font-medium ${riskLevel.textColor}`}>
+                ({riskLevel.label})
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const report = generateLPReport(project)
+                downloadDocument(report, `${project.project_name || 'Project'}_LP_Report.txt`)
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm"
+            >
+              <Download size={18} />
+              LP Report
+            </button>
+            <button
+              onClick={() => {
+                const letter = generateLetterOfOffer(project)
+                downloadDocument(letter, `${project.project_name || 'Project'}_Letter_of_Offer.txt`)
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm"
+            >
+              <Download size={18} />
+              Letter of Offer
+            </button>
+            <button
+              onClick={() => {
+                const proposal = generateLoanProposal(project)
+                downloadDocument(proposal, `${project.project_name || 'Project'}_Loan_Proposal.txt`)
+              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm"
+            >
+              <Download size={18} />
+              Loan Proposal
+            </button>
           </div>
         </div>
       </div>
